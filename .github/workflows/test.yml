@@ -12,3 +12,10 @@ jobs:
         run: yarn lint
       - name: Check types
         run: yarn typecheck
+      - name: Restore Jest cache
+        uses: actions/cache@v3
+        with:
+          path: .jest-cache
+          key: ${{ runner.os }}-jest
+      - name: Test
+        run: yarn test
