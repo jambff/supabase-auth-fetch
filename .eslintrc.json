@@ -55,6 +55,6 @@
     "jest/consistent-test-it": ["error", { "fn": "it" }],
     "jest/prefer-lowercase-title": ["error", { "ignore": ["describe"] }],
     "jest/require-top-level-describe": "error",
-    "jest/no-standalone-expect": "off",
+    "jest/no-standalone-expect": "off"
   }
 }
