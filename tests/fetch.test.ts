@@ -1,5 +1,4 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import Cookies from 'js-cookie';
 import unfetch from 'unfetch';
 import { createAuthenticatedFetch } from '../src';
 
@@ -13,12 +12,10 @@ const supabase = {
 
 jest.mock('unfetch');
 
-const token = 'abc123';
 const authenticatedFetch = createAuthenticatedFetch(supabase);
 
 describe('Fetch', () => {
   beforeEach(() => {
-    Cookies.remove('access_token');
     (supabase.auth.getSession as jest.Mock).mockResolvedValue({
       data: {
         session: {
@@ -39,20 +36,22 @@ describe('Fetch', () => {
   });
 
   it('appends the authorization header', async () => {
-    Cookies.set('access_token', token);
-
     await authenticatedFetch('http://api.com/example', { method: 'POST' });
 
     expect(unfetch).toHaveBeenCalledTimes(1);
     expect(unfetch).toHaveBeenCalledWith('http://api.com/example', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer current_access_token`,
       },
     });
   });
 
   it('does not append the authorization header if not defined', async () => {
+    (supabase.auth.getSession as jest.Mock).mockResolvedValue({
+      data: {},
+    });
+
     await authenticatedFetch('http://api.com/example', { method: 'POST' });
 
     expect(unfetch).toHaveBeenCalledTimes(1);
@@ -76,9 +75,12 @@ describe('Fetch', () => {
       expect(unfetch).toHaveBeenCalledTimes(2);
       expect(unfetch).toHaveBeenCalledWith('http://api.com/example', {
         method: 'POST',
+        headers: {
+          Authorization: 'Bearer current_access_token',
+        },
       });
 
-      expect(supabase.auth.getSession).toHaveBeenCalledTimes(1);
+      expect(supabase.auth.getSession).toHaveBeenCalledTimes(3);
       expect(supabase.auth.setSession).toHaveBeenCalledTimes(1);
       expect(supabase.auth.setSession).toHaveBeenCalledWith({
         refresh_token: 'current_refresh_token',
@@ -86,7 +88,6 @@ describe('Fetch', () => {
       });
 
       expect(supabase.auth.signOut).not.toHaveBeenCalled();
-      expect(Cookies.get('access_token')).toBe('new_access_token');
     },
   );
 
@@ -102,10 +103,12 @@ describe('Fetch', () => {
     expect(unfetch).toHaveBeenCalledTimes(2);
     expect(unfetch).toHaveBeenCalledWith('http://api.com/example', {
       method: 'POST',
+      headers: {
+        Authorization: 'Bearer current_access_token',
+      },
     });
 
     expect(supabase.auth.signOut).toHaveBeenCalled();
-    expect(Cookies.get('access_token')).toBeUndefined();
   });
 
   it('signs out if the first request fails and no current session', async () => {
@@ -126,7 +129,6 @@ describe('Fetch', () => {
     });
 
     expect(supabase.auth.signOut).toHaveBeenCalled();
-    expect(Cookies.get('access_token')).toBeUndefined();
   });
 
   it('signs out if the first request fails and no new session', async () => {
@@ -144,9 +146,11 @@ describe('Fetch', () => {
     expect(unfetch).toHaveBeenCalledTimes(1);
     expect(unfetch).toHaveBeenCalledWith('http://api.com/example', {
       method: 'POST',
+      headers: {
+        Authorization: 'Bearer current_access_token',
+      },
     });
 
     expect(supabase.auth.signOut).toHaveBeenCalled();
-    expect(Cookies.get('access_token')).toBeUndefined();
   });
 });

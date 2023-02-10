@@ -1,8 +1,5 @@
 import fetch from 'unfetch';
-import Cookies from 'js-cookie';
 import { SupabaseClient } from '@supabase/supabase-js';
-
-const ACCESS_TOKEN_COOKIE_KEY = 'access_token';
 
 type UnfetchRequestInit = {
   method?: string;
@@ -28,8 +25,15 @@ type UnfetchResponse = {
   };
 };
 
-const getOptionsWithAuth = (options?: UnfetchRequestInit) => {
-  const token = Cookies.get(ACCESS_TOKEN_COOKIE_KEY);
+const getOptionsWithAuth = async (
+  supabase: SupabaseClient,
+  options?: UnfetchRequestInit,
+) => {
+  const {
+    data: { session: currentSession },
+  } = await supabase.auth.getSession();
+
+  const token = currentSession?.access_token;
 
   if (!token) {
     return options;
@@ -50,7 +54,6 @@ const getOptionsWithAuth = (options?: UnfetchRequestInit) => {
 export const createAuthenticatedFetch = (supabase: SupabaseClient) => {
   const signOut = async () => {
     await supabase.auth.signOut();
-    Cookies.remove(ACCESS_TOKEN_COOKIE_KEY);
 
     throw new Error('Unauthorized');
   };
@@ -72,11 +75,7 @@ export const createAuthenticatedFetch = (supabase: SupabaseClient) => {
 
     if (!newSession?.access_token) {
       await signOut();
-
-      return;
     }
-
-    Cookies.set(ACCESS_TOKEN_COOKIE_KEY, newSession.access_token);
   };
 
   const authenticatedFetch = async (
@@ -84,7 +83,8 @@ export const createAuthenticatedFetch = (supabase: SupabaseClient) => {
     options?: UnfetchRequestInit,
     _retried?: boolean,
   ): Promise<UnfetchResponse> => {
-    const res = await fetch(url, getOptionsWithAuth(options));
+    const init = await getOptionsWithAuth(supabase, options);
+    const res = await fetch(url, init);
 
     if (res?.status && [401, 403].includes(res.status)) {
       if (_retried) {

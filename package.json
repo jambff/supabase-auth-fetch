@@ -36,8 +36,6 @@
     "@supabase/supabase-js": "^2.2.3"
   },
   "dependencies": {
-    "js-cookie": "^3.0.1",
-    "qs": "^6.11.0",
     "unfetch": "^4.0.2"
   },
   "devDependencies": {
@@ -49,9 +47,7 @@
     "@semantic-release/release-notes-generator": "^9.0.3",
     "@supabase/supabase-js": "^2.4.0",
     "@types/jest": "^29.0.0",
-    "@types/js-cookie": "^3.0.2",
     "@types/node": "^18.11.18",
-    "@types/qs": "^6.9.7",
     "@typescript-eslint/eslint-plugin": "^5.22.0",
     "@typescript-eslint/parser": "^5.22.0",
     "commitlint": "^8.3.5",
